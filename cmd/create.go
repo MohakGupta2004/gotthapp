@@ -90,6 +90,34 @@ var createCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		// Update import paths in all Go and Templ files
+		err = filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() && (strings.HasSuffix(path, ".go") || strings.HasSuffix(path, ".templ")) {
+				content, err := os.ReadFile(path)
+				if err != nil {
+					return err
+				}
+
+				// Replace all import paths
+				updatedContent := strings.ReplaceAll(string(content),
+					"github.com/dtg-lucifer/goth-stack-starter",
+					newModulePath)
+
+				if err := os.WriteFile(path, []byte(updatedContent), 0644); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			fmt.Printf("Error updating import paths: %v\n", err)
+			os.Exit(1)
+		}
+
 		// Copy the template
 		if err := copyDir(tempDir, targetDir); err != nil {
 			fmt.Printf("Error copying template: %v\n", err)
@@ -99,9 +127,8 @@ var createCmd = &cobra.Command{
 		fmt.Printf("Successfully created new Goth Stack project '%s'!\n", projectName)
 		fmt.Printf("Next steps:\n")
 		fmt.Printf("1. cd %s\n", projectName)
-		fmt.Printf("2. go mod tidy\n")
-		fmt.Printf("3. make build\n")
-		fmt.Printf("4. make dev\n")
+		fmt.Printf("2. make setup\n")
+		fmt.Printf("3. make dev\n")
 	},
 }
 
